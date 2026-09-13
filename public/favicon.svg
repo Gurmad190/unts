@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">UNS</title>
+  <desc id="desc">University of Northeastern Somalia monogram</desc>
+  <rect width="512" height="512" rx="112" fill="#002147"/>
+  <circle cx="256" cy="256" r="184" fill="none" stroke="#F5C542" stroke-width="18"/>
+  <path d="M139 151h234v45H184v64h145c24 0 44 20 44 44v56c0 24-20 44-44 44H139v-45h184v-64H183c-24 0-44-20-44-44v-56c0-24 20-44 44-44Z" fill="#fff"/>
+  <path d="M139 151h45v253h-45zM328 151h45v253h-45z" fill="#F5C542"/>
+</svg>

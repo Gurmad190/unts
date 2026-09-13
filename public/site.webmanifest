@@ -1,0 +1,17 @@
+{
+  "name": "University of Northeastern Somalia",
+  "short_name": "UNS",
+  "description": "University of Northeastern Somalia – Garowe",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#002147",
+  "theme_color": "#002147",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
