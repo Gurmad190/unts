@@ -25,7 +25,7 @@ const adminNavigation: NavItem[] = [
   { label: 'Applications', path: '/admin/admissions', icon: FileCheck2, allowedRoles: ['super_admin', 'admin', 'admissions'] },
   { label: 'Students', path: '/admin/students', icon: Users, allowedRoles: ['super_admin', 'admin', 'registrar', 'faculty', 'finance'] },
   { label: 'Departments & programmes', path: '/admin/departments', icon: Building2, allowedRoles: ['super_admin', 'admin', 'registrar'] },
-  { label: 'Announcements', path: '/admin/content', icon: Bell, allowedRoles: ['super_admin', 'admin'] },
+  { label: 'News & content', path: '/admin/content', icon: Bell, allowedRoles: ['super_admin', 'admin'] },
   { label: 'User access', path: '/admin/users', icon: ShieldCheck, allowedRoles: ['super_admin'] },
 ];
 
@@ -50,9 +50,9 @@ const PortalShell: React.FC<{ role: PortalRole }> = ({ role }) => {
   };
 
   const sidebar = (
-    <aside className="flex h-full w-72 flex-col bg-slate-950 text-white">
+    <aside className="flex h-full w-72 flex-col bg-gradient-to-b from-slate-950 via-slate-950 to-slate-900 text-white">
       <div className="flex items-center gap-3 border-b border-white/10 px-6 py-6">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-300 font-black tracking-tight text-slate-950">UNS</div>
+        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-300 font-black tracking-tight text-slate-950 shadow-lg shadow-amber-300/10">UNS</div>
         <div>
           <p className="text-sm font-semibold">UNS Portal</p>
           <p className="text-xs text-slate-400">{role === 'admin' ? 'Administration' : 'Student services'}</p>
@@ -109,7 +109,7 @@ const PortalShell: React.FC<{ role: PortalRole }> = ({ role }) => {
       </div>
 
       <div className="lg:pl-72">
-        <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-slate-50/90 backdrop-blur">
+        <header className="sticky top-0 z-30 border-b border-slate-200/80 bg-slate-50/80 shadow-[0_8px_25px_-24px_rgba(15,23,42,0.7)] backdrop-blur">
           <div className="flex h-20 items-center justify-between px-4 sm:px-6 lg:px-10">
             <div className="flex items-center gap-3">
               <button className="rounded-xl border border-slate-200 bg-white p-2.5 lg:hidden" onClick={() => setMobileOpen(true)} aria-label="Open navigation"><Menu className="h-5 w-5" /></button>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, ChevronRight, Phone } from 'lucide-react';
+import { Menu, X, Phone } from 'lucide-react';
 
 const Header: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -77,10 +77,10 @@ const Header: React.FC = () => {
               ))}
               <div className="flex space-x-2 ml-3">
                 <Link
-                  to="/admissions"
+                  to="/apply"
                   className="bg-uns-gold text-uns-navy px-4 py-2 rounded text-xs font-bold hover:bg-yellow-400 transition-colors"
                 >
-                  Apply Now
+                  Apply Online
                 </Link>
               </div>
             </nav>
@@ -125,11 +125,11 @@ const Header: React.FC = () => {
                   Portal Login
                 </Link>
                 <Link
-                  to="/admissions"
+                  to="/apply"
                   onClick={() => setIsOpen(false)}
                   className="block w-full text-center bg-uns-gold text-uns-navy px-4 py-3 rounded-md font-bold text-base hover:bg-yellow-400 transition-colors"
                 >
-                  Apply Now
+                  Apply Online
                 </Link>
               </div>
             </div>

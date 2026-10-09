@@ -28,9 +28,13 @@ const Admissions: React.FC = () => {
             Join the University of Northeastern Somalia and take the first step towards a successful career.
           </p>
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-            <a href="https://wa.me/0905265390" target="_blank" rel="noopener noreferrer" className="bg-uns-gold text-uns-navy px-8 py-4 rounded-md font-bold text-lg hover:bg-yellow-400 transition-all flex items-center shadow-lg w-full sm:w-auto justify-center">
+            <Link to="/apply" className="bg-uns-gold text-uns-navy px-8 py-4 rounded-md font-bold text-lg hover:bg-yellow-400 transition-all flex items-center shadow-lg w-full sm:w-auto justify-center">
+              <ArrowRight className="mr-2" size={24} />
+              Apply Online
+            </Link>
+            <a href="https://wa.me/0905265390" target="_blank" rel="noopener noreferrer" className="border border-white/30 bg-white/10 text-white px-8 py-4 rounded-md font-bold text-lg hover:bg-white/20 transition-all flex items-center shadow-lg w-full sm:w-auto justify-center">
               <MessageCircle className="mr-2" size={24} />
-              Apply Now via WhatsApp
+              WhatsApp Admissions
             </a>
             <a href="tel:+0905265390" className="bg-white text-uns-navy px-8 py-4 rounded-md font-bold text-lg hover:bg-gray-100 transition-all flex items-center shadow-lg w-full sm:w-auto justify-center">
               <Phone className="mr-2" size={24} />

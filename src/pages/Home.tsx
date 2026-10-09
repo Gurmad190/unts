@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, Users, Globe, Award, ArrowRight, Calendar, Newspaper, Phone, Mail } from 'lucide-react';
+import { BookOpen, Users, Globe, Award, ArrowRight, Calendar, Phone, Mail } from 'lucide-react';
+import { listAnnouncements, type Announcement } from '../lib/portalApi';
 
 const Home: React.FC = () => {
   const featuredPrograms = [
@@ -30,26 +31,16 @@ const Home: React.FC = () => {
     },
   ];
 
-  const latestNews = [
-    {
-      title: 'Admissions Open for Fall 2026 Semester',
-      date: 'August 2026',
-      category: 'Admissions',
-      link: '/admissions',
-    },
-    {
-      title: 'New Research Initiative at UNS',
-      date: 'August 2026',
-      category: 'Research',
-      link: '/research',
-    },
-    {
-      title: 'Career Development Workshop Series',
-      date: 'July 2026',
-      category: 'Career Development',
-      link: '/career',
-    },
-  ];
+  const [latestNews, setLatestNews] = useState<Announcement[]>([]);
+  const [newsLoading, setNewsLoading] = useState(true);
+
+  useEffect(() => {
+    listAnnouncements()
+      .then((items) => setLatestNews(items.slice(0, 3)))
+      .catch(() => setLatestNews([]))
+      .finally(() => setNewsLoading(false));
+  }, []);
+
 
   return (
     <div className="flex flex-col">
@@ -83,8 +74,8 @@ const Home: React.FC = () => {
               Study On Campus in Garowe or Access Selected Learning Opportunities Online.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link to="/admissions" className="bg-uns-gold text-uns-navy px-8 py-4 rounded-md font-bold text-lg hover:bg-yellow-400 transition-all text-center">
-                Apply Now
+              <Link to="/apply" className="bg-uns-gold text-uns-navy px-8 py-4 rounded-md font-bold text-lg hover:bg-yellow-400 transition-all text-center">
+                Apply Online
               </Link>
               <Link to="/academics" className="border-2 border-white text-white px-8 py-4 rounded-md font-bold text-lg hover:bg-white hover:text-uns-navy transition-all text-center">
                 Explore Programs
@@ -231,18 +222,17 @@ const Home: React.FC = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {latestNews.map((news, index) => (
-              <Link to={news.link} key={index} className="bg-white p-6 rounded-xl border border-gray-100 hover:shadow-lg transition-all group">
+            {newsLoading ? [1, 2, 3].map((item) => <div key={item} className="h-36 animate-pulse rounded-xl bg-white" />) : latestNews.length === 0 ? <div className="md:col-span-3 rounded-xl border border-dashed border-gray-300 bg-white p-8 text-center"><p className="font-semibold text-uns-navy">News and updates are coming soon.</p><p className="mt-2 text-sm text-gray-600">Visit this page again for the latest University announcements.</p></div> : latestNews.map((news) => (
+              <article key={news.id} className="group rounded-xl border border-gray-100 bg-white p-6 transition-all hover:-translate-y-0.5 hover:shadow-lg">
                 <div className="flex items-center space-x-3 mb-3">
-                  <span className="bg-uns-gold text-uns-navy text-xs font-bold px-2 py-1 rounded">{news.category}</span>
+                  <span className="bg-uns-gold text-uns-navy text-xs font-bold px-2 py-1 rounded capitalize">{news.content_type}</span>
                   <span className="text-gray-500 text-xs flex items-center">
-                    <Calendar size={12} className="mr-1" /> {news.date}
+                    <Calendar size={12} className="mr-1" /> {news.published_at ? new Date(news.published_at).toLocaleDateString() : 'Recently published'}
                   </span>
                 </div>
-                <h3 className="text-lg font-bold text-uns-navy group-hover:text-uns-gold transition-colors leading-tight">
-                  {news.title}
-                </h3>
-              </Link>
+                <h3 className="text-lg font-bold text-uns-navy group-hover:text-uns-gold transition-colors leading-tight">{news.title}</h3>
+                <p className="mt-2 line-clamp-2 text-sm leading-6 text-gray-600">{news.summary || news.body}</p>
+              </article>
             ))}
           </div>
           
@@ -262,8 +252,8 @@ const Home: React.FC = () => {
             Join a community of scholars, innovators, and leaders at the University of Northeastern Somalia.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <Link to="/admissions" className="bg-uns-gold text-uns-navy px-8 py-4 rounded-md font-bold text-lg hover:bg-yellow-400 transition-all">
-              Apply Now
+            <Link to="/apply" className="bg-uns-gold text-uns-navy px-8 py-4 rounded-md font-bold text-lg hover:bg-yellow-400 transition-all">
+              Apply Online
             </Link>
             <a href="tel:+0905265390" className="border border-white text-white px-8 py-4 rounded-md font-bold text-lg hover:bg-white hover:text-uns-navy transition-all inline-flex items-center justify-center">
               <Phone size={18} className="mr-2" />

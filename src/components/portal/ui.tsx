@@ -1,6 +1,6 @@
 import React from 'react';
 
-export const cardClass = 'rounded-2xl border border-slate-200 bg-white shadow-sm';
+export const cardClass = 'rounded-2xl border border-slate-200/80 bg-white shadow-[0_16px_45px_-28px_rgba(15,23,42,0.45)]';
 
 export const PageHeader: React.FC<{
   eyebrow?: string;
@@ -32,14 +32,14 @@ export const StatCard: React.FC<{
     rose: 'bg-rose-50 text-rose-700',
   };
   return (
-    <div className={`${cardClass} p-5`}>
+    <div className={`${cardClass} group p-5 transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_20px_50px_-28px_rgba(15,23,42,0.55)]`}>
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-sm font-medium text-slate-500">{label}</p>
           <p className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">{value}</p>
           {detail && <p className="mt-1 text-xs text-slate-500">{detail}</p>}
         </div>
-        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${tones[tone]}`}>{icon}</div>
+        <div className={`flex h-10 w-10 items-center justify-center rounded-xl transition-transform duration-200 group-hover:scale-105 ${tones[tone]}`}>{icon}</div>
       </div>
     </div>
   );
