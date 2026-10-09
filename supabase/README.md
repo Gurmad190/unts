@@ -1,0 +1,26 @@
+# Supabase backend
+
+The hosted project contains the portal schema, RLS policies and tracked migrations for the UNS portal. The two Edge Functions in this directory are the server-side boundary for privileged workflows:
+
+- `admin-create-user` — Super Admin-only staff account creation.
+- `approve-student-application` — admissions approval, optional student account creation, and atomic database approval.
+
+Required Edge Function secrets are managed by Supabase and must never be copied into Vercel or browser code:
+
+- `SUPABASE_URL`
+- `SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+The frontend only uses `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY`.
+
+## Hosted migration history
+
+The hosted project has these workflow migrations applied:
+
+1. `portal_workflows_and_seed_catalog` — grants backend privileges, creates `submit_application` and `approve_application`, and seeds the initial catalogue and current academic term.
+2. `public_application_catalog_read` — permits anonymous reads of active programmes and the current academic term.
+3. `restrict_public_applications_to_current_term` — ensures the public submission RPC accepts only the current term.
+4. `allow_registrar_catalog_management` — lets Registrars maintain departments as well as programmes and terms.
+5. `public_catalog_department_read` — permits anonymous department names for the public catalogue.
+
+Apply schema changes through Supabase migrations, review RLS policies after each change, and deploy the matching function source with JWT verification enabled. Never use the service-role key from a client component.
