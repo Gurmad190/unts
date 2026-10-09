@@ -52,12 +52,12 @@ Deno.serve(async (request) => {
     let temporaryPassword: string | null = null;
     let accountCreated = false;
     let authUserId: string | null = null;
-    const profiles = await rest(`/rest/v1/profiles?select=id&email=eq.${encodeURIComponent(applicant.email)}`);
+    const profiles = await rest(`/rest/v1/profiles?select=id&email=ilike.${encodeURIComponent(applicant.email)}`);
     if (profiles?.[0]?.id) {
       authUserId = profiles[0].id;
     } else if (decision === 'accepted') {
       temporaryPassword = `UNS-${crypto.randomUUID().replaceAll('-', '').slice(0, 12)}a1`;
-      const createResponse = await fetch(`${supabaseUrl}/auth/v1/admin/users`, { method: 'POST', headers: adminHeaders, body: JSON.stringify({ email: applicant.email, password: temporaryPassword, email_confirm: true, user_metadata: { full_name: applicant.full_name } }) });
+      const createResponse = await fetch(`${supabaseUrl}/auth/v1/admin/users`, { method: 'POST', headers: adminHeaders, body: JSON.stringify({ email: applicant.email, password: temporaryPassword, email_confirm: true, user_metadata: { full_name: applicant.full_name, must_reset_password: true } }) });
       const created = await readJson(createResponse);
       if (!createResponse.ok || !created?.id) return json(request, { error: created?.msg || created?.message || 'Could not create the student account' }, 400);
       authUserId = created.id;
@@ -74,6 +74,18 @@ Deno.serve(async (request) => {
       if (accountCreated && authUserId) await fetch(`${supabaseUrl}/auth/v1/admin/users/${encodeURIComponent(authUserId)}`, { method: 'DELETE', headers: adminHeaders });
       return json(request, { error: result?.message || result?.hint || 'Application decision failed' }, 400);
     }
+
+    if (decision === 'accepted' && authUserId) {
+      const metadataResponse = await fetch(`${supabaseUrl}/auth/v1/admin/users/${encodeURIComponent(authUserId)}`, {
+        method: 'PUT',
+        headers: adminHeaders,
+        body: JSON.stringify({ user_metadata: { full_name: applicant.full_name, must_reset_password: true } }),
+      });
+      if (!metadataResponse.ok) {
+        console.error('Student account was accepted but could not be marked for first-login password reset');
+      }
+    }
+
     return json(request, { result: Array.isArray(result) ? result[0] : result, accountCreated, temporaryPassword });
   } catch (error) {
     console.error(error);
