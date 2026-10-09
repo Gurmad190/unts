@@ -65,7 +65,7 @@ GitHub Actions runs typechecking and a production build on pushes and pull reque
 
 Vercel is connected to the `main` branch of `Gurmad190/unts`. The repository's `vercel.json` is the source of truth for the Vite build:
 
-- Install: `pnpm install --frozen-lockfile`
+- Install: `pnpm install --no-frozen-lockfile`
 - Build: `pnpm run build`
 - Output: `dist`
 - SPA fallback: all routes rewrite to `index.html`
