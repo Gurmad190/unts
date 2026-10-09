@@ -1,143 +1,51 @@
-import React from 'react';
-import { useAdminStore } from '../../store/adminStore';
-import { Users, BookOpen, FileText, Building2, TrendingUp, Megaphone, Award } from 'lucide-react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { ArrowUpRight, Bell, Building2, FileCheck2, GraduationCap, Users } from 'lucide-react';
+import { EmptyState, PageHeader, StatCard, StatusBadge, cardClass } from '../../components/portal/ui';
+import { usePortalStore } from '../../store/portalStore';
 
 const AdminDashboard: React.FC = () => {
-  const { students, programs, departments, applications, contents } = useAdminStore();
+  const { applications, students, departments, programs, announcements, isLoading, error, loadAdminData, clearError } = usePortalStore();
 
-  const activeStudents = students.filter(s => s.status === 'Active').length;
-  const pendingApplications = applications.filter(a => a.status === 'New' || a.status === 'Under Review').length;
-  const publishedContent = contents.filter(c => c.status === 'Published').length;
-  const scholarships = contents.filter(c => c.type === 'scholarship').length;
+  useEffect(() => { void loadAdminData(); }, [loadAdminData]);
 
-  const stats = [
-    { name: 'Total Students', value: students.length, icon: Users, color: 'bg-blue-500', link: '/admin/students' },
-    { name: 'Active Students', value: activeStudents, icon: TrendingUp, color: 'bg-green-500', link: '/admin/students' },
-    { name: 'Departments', value: departments.length, icon: Building2, color: 'bg-indigo-500', link: '/admin/departments' },
-    { name: 'Programs', value: programs.length, icon: BookOpen, color: 'bg-purple-500', link: '/admin/departments' },
-    { name: 'Applications', value: applications.length, icon: FileText, color: 'bg-orange-500', link: '/admin/admissions' },
-    { name: 'Pending Reviews', value: pendingApplications, icon: FileText, color: 'bg-yellow-500', link: '/admin/admissions' },
-    { name: 'Published Content', value: publishedContent, icon: Megaphone, color: 'bg-teal-500', link: '/admin/content' },
-    { name: 'Scholarships', value: scholarships, icon: Award, color: 'bg-red-500', link: '/admin/content' },
-  ];
+  const pending = applications.filter((application) => ['applied', 'new', 'review'].includes(application.status)).length;
+  const activeStudents = students.filter((student) => student.status === 'active').length;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">Dashboard Overview</h2>
-        <p className="text-sm text-gray-500 mt-1">Welcome to the UNS Administration Panel</p>
+    <div className="space-y-8">
+      <PageHeader
+        eyebrow="Administration"
+        title="Good morning, here is the overview."
+        description="A focused workspace for admissions, students, academic catalogues and university communications."
+        action={<Link to="/admin/admissions" className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">Review applications <ArrowUpRight className="h-4 w-4" /></Link>}
+      />
+
+      {error && <div className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800"><span>{error}</span><button onClick={clearError} className="font-semibold">Dismiss</button></div>}
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Pending applications" value={pending} detail="Needs an admissions decision" icon={<FileCheck2 className="h-5 w-5" />} tone="amber" />
+        <StatCard label="Active students" value={activeStudents} detail={`${students.length} student records total`} icon={<Users className="h-5 w-5" />} tone="teal" />
+        <StatCard label="Programmes" value={programs.length} detail={`${departments.length} departments`} icon={<GraduationCap className="h-5 w-5" />} />
+        <StatCard label="Published updates" value={announcements.filter((item) => item.status === 'published').length} detail="Visible to the university community" icon={<Bell className="h-5 w-5" />} tone="rose" />
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon;
-          return (
-            <Link key={stat.name} to={stat.link} className="bg-white overflow-hidden shadow rounded-lg hover:shadow-md transition-shadow group">
-              <div className="p-5">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className={`p-3 rounded-md ${stat.color} text-white`}>
-                      <Icon className="h-6 w-6" aria-hidden="true" />
-                    </div>
-                  </div>
-                  <div className="ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-sm font-medium text-gray-500 truncate">{stat.name}</dt>
-                      <dd>
-                        <div className="text-lg font-bold text-gray-900 group-hover:text-[#002147] transition-colors">{stat.value}</div>
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
-              </div>
-            </Link>
-          );
-        })}
+      <div className="grid gap-6 xl:grid-cols-[1.35fr_1fr]">
+        <section className={`${cardClass} overflow-hidden`}>
+          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-5">
+            <div><h2 className="font-semibold text-slate-950">Recent applications</h2><p className="mt-1 text-sm text-slate-500">The latest people entering the admissions workflow.</p></div>
+            <Link to="/admin/admissions" className="text-sm font-semibold text-slate-700 hover:text-slate-950">View all</Link>
+          </div>
+          {isLoading ? <div className="space-y-3 p-6">{[1, 2, 3].map((item) => <div key={item} className="h-14 animate-pulse rounded-xl bg-slate-100" />)}</div> : applications.length === 0 ? <div className="p-6"><EmptyState title="No applications yet" description="Online applications will appear here once applicants submit the form." action={<Link to="/apply" className="font-semibold text-slate-900">View application form</Link>} /></div> : <div className="divide-y divide-slate-100">{applications.slice(0, 5).map((application) => <div key={application.id} className="flex items-center justify-between gap-4 px-6 py-4"><div className="min-w-0"><p className="truncate text-sm font-semibold text-slate-900">{application.applicant_name}</p><p className="mt-1 truncate text-xs text-slate-500">{application.application_number} · {application.program_name}</p></div><StatusBadge status={application.status} /></div>)}</div>}
+        </section>
+
+        <section className={`${cardClass} p-6`}>
+          <div className="flex items-center justify-between"><div><h2 className="font-semibold text-slate-950">Department activity</h2><p className="mt-1 text-sm text-slate-500">Programme catalogue coverage.</p></div><Building2 className="h-5 w-5 text-slate-400" /></div>
+          <div className="mt-6 space-y-5">{departments.length === 0 ? <EmptyState title="No departments" description="Create your first department from the catalogue page." /> : departments.map((department) => { const count = programs.filter((program) => program.department_id === department.id).length; return <div key={department.id}><div className="flex items-center justify-between gap-4 text-sm"><span className="font-medium text-slate-800">{department.name}</span><span className="text-slate-500">{count} programmes</span></div><div className="mt-2 h-2 rounded-full bg-slate-100"><div className="h-2 rounded-full bg-teal-500" style={{ width: `${Math.min(100, Math.max(8, count * 18))}%` }} /></div></div>; })}</div>
+        </section>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Recent Applications */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Recent Applications</h3>
-            <Link to="/admin/admissions" className="text-sm text-[#002147] hover:underline font-medium">View All</Link>
-          </div>
-          <div className="space-y-3">
-            {applications.slice(0, 5).map((app) => (
-              <div key={app.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="h-8 w-8 bg-[#002147] text-white rounded-full flex items-center justify-center text-xs font-bold">
-                    {app.applicantName.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{app.applicantName}</p>
-                    <p className="text-xs text-gray-500">{programs.find(p => p.id === app.programId)?.name}</p>
-                  </div>
-                </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                  app.status === 'New' ? 'bg-blue-100 text-blue-800' :
-                  app.status === 'Under Review' ? 'bg-yellow-100 text-yellow-800' :
-                  app.status === 'Accepted' ? 'bg-green-100 text-green-800' :
-                  app.status === 'Rejected' ? 'bg-red-100 text-red-800' :
-                  'bg-purple-100 text-purple-800'
-                }`}>{app.status}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Recent Students */}
-        <div className="bg-white shadow rounded-lg p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Students by Department</h3>
-            <Link to="/admin/students" className="text-sm text-[#002147] hover:underline font-medium">View All</Link>
-          </div>
-          <div className="space-y-3">
-            {departments.map(dept => {
-              const count = students.filter(s => s.departmentId === dept.id).length;
-              const activeCount = students.filter(s => s.departmentId === dept.id && s.status === 'Active').length;
-              return (
-                <div key={dept.id} className="p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{dept.name}</p>
-                      <p className="text-xs text-gray-500">{activeCount} active / {count} total</p>
-                    </div>
-                    <div className="w-16 bg-gray-200 rounded-full h-2">
-                      <div className="bg-[#002147] h-2 rounded-full" style={{ width: `${students.length > 0 ? (count / students.length) * 100 : 0}%` }}></div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Link to="/admin/students" className="p-4 border border-gray-200 rounded-lg text-center hover:bg-[#002147] hover:text-white hover:border-[#002147] transition-all group">
-            <Users className="h-8 w-8 mx-auto mb-2 text-[#002147] group-hover:text-white" />
-            <span className="block text-sm font-medium">Manage Students</span>
-          </Link>
-          <Link to="/admin/departments" className="p-4 border border-gray-200 rounded-lg text-center hover:bg-[#002147] hover:text-white hover:border-[#002147] transition-all group">
-            <BookOpen className="h-8 w-8 mx-auto mb-2 text-[#002147] group-hover:text-white" />
-            <span className="block text-sm font-medium">Departments & Programs</span>
-          </Link>
-          <Link to="/admin/admissions" className="p-4 border border-gray-200 rounded-lg text-center hover:bg-[#002147] hover:text-white hover:border-[#002147] transition-all group">
-            <FileText className="h-8 w-8 mx-auto mb-2 text-[#002147] group-hover:text-white" />
-            <span className="block text-sm font-medium">Review Admissions</span>
-          </Link>
-          <Link to="/admin/content" className="p-4 border border-gray-200 rounded-lg text-center hover:bg-[#002147] hover:text-white hover:border-[#002147] transition-all group">
-            <Megaphone className="h-8 w-8 mx-auto mb-2 text-[#002147] group-hover:text-white" />
-            <span className="block text-sm font-medium">Manage Content</span>
-          </Link>
-        </div>
-      </div>
+      <section className={`${cardClass} p-6`}><div className="flex items-center justify-between"><div><h2 className="font-semibold text-slate-950">Common tasks</h2><p className="mt-1 text-sm text-slate-500">Jump directly into the work that needs attention.</p></div></div><div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><Link to="/admin/admissions" className="rounded-xl border border-slate-200 p-4 transition hover:border-slate-950 hover:bg-slate-50"><FileCheck2 className="h-5 w-5 text-amber-600" /><p className="mt-3 text-sm font-semibold">Review applications</p><p className="mt-1 text-xs text-slate-500">Accept, waitlist or reject applicants.</p></Link><Link to="/admin/students" className="rounded-xl border border-slate-200 p-4 transition hover:border-slate-950 hover:bg-slate-50"><Users className="h-5 w-5 text-teal-600" /><p className="mt-3 text-sm font-semibold">Browse students</p><p className="mt-1 text-xs text-slate-500">Find records and academic links.</p></Link><Link to="/admin/departments" className="rounded-xl border border-slate-200 p-4 transition hover:border-slate-950 hover:bg-slate-50"><GraduationCap className="h-5 w-5 text-indigo-600" /><p className="mt-3 text-sm font-semibold">Manage catalogue</p><p className="mt-1 text-xs text-slate-500">Keep departments and programmes current.</p></Link><Link to="/admin/content" className="rounded-xl border border-slate-200 p-4 transition hover:border-slate-950 hover:bg-slate-50"><Bell className="h-5 w-5 text-rose-600" /><p className="mt-3 text-sm font-semibold">Publish an update</p><p className="mt-1 text-xs text-slate-500">Share news and announcements.</p></Link></div></section>
     </div>
   );
 };
