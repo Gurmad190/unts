@@ -42,7 +42,7 @@ Deno.serve(async (request) => {
     const role = String(body.role ?? '');
     const phone = String(body.phone ?? '').trim();
     const allowedRoles = new Set(['super_admin', 'admin', 'admissions', 'registrar', 'faculty', 'finance']);
-    if (!email || !fullName || password.length < 8 || !allowedRoles.has(role)) return json(request, { error: 'Provide a full name, valid email, staff role and a password of at least 8 characters.' }, 400);
+    if (!email || !fullName || password.length < 12 || !allowedRoles.has(role)) return json(request, { error: 'Provide a full name, valid email, staff role and a password of at least 12 characters.' }, 400);
 
     const created = await rest('/auth/v1/admin/users', { method: 'POST', body: JSON.stringify({ email, password, email_confirm: true, user_metadata: { full_name: fullName } }) });
     const userId = created?.id;
