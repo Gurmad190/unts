@@ -1,32 +1,40 @@
-import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { AlertCircle, Lock, Mail } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
-import { Lock, Mail, AlertCircle } from 'lucide-react';
+
+interface LoginLocationState {
+  from?: {
+    pathname?: string;
+  };
+}
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-  const { login, user } = useAuthStore();
   const navigate = useNavigate();
   const location = useLocation();
+  const { login, user, isLoading, error, clearError } = useAuthStore();
 
-  const from = (location.state as any)?.from?.pathname || (user?.role === 'admin' ? '/admin' : '/student');
+  const requestedDestination = (location.state as LoginLocationState | null)?.from?.pathname;
+  const roleHome = user?.role === 'admin' ? '/admin' : '/student';
+  const destination = user && requestedDestination && requestedDestination !== '/login'
+    && ((user.role === 'admin' && requestedDestination.startsWith('/admin'))
+      || (user.role === 'student' && requestedDestination.startsWith('/student')))
+    ? requestedDestination
+    : roleHome;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    
-    if (login(email, password)) {
-      const loggedInUser = useAuthStore.getState().user;
-      if (loggedInUser?.role === 'admin') {
-        navigate('/admin');
-      } else {
-        navigate('/student');
-      }
-    } else {
-      setError('Invalid email or password. Try admin@uns.edu or student@uns.edu with password123');
+  useEffect(() => {
+    if (user) {
+      navigate(destination, { replace: true });
     }
+  }, [destination, navigate, user]);
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    clearError();
+
+    await login(email, password);
   };
 
   return (
@@ -41,7 +49,7 @@ const Login: React.FC = () => {
           Sign in to your account
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Admin or Student Portal Access
+          Use the email and password provided by the university.
         </p>
       </div>
 
@@ -49,14 +57,10 @@ const Login: React.FC = () => {
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
-              <div className="bg-red-50 border-l-4 border-red-400 p-4">
+              <div className="bg-red-50 border-l-4 border-red-400 p-4" role="alert">
                 <div className="flex">
-                  <div className="flex-shrink-0">
-                    <AlertCircle className="h-5 w-5 text-red-400" />
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm text-red-700">{error}</p>
-                  </div>
+                  <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0" />
+                  <p className="ml-3 text-sm text-red-700">{error}</p>
                 </div>
               </div>
             )}
@@ -76,9 +80,9 @@ const Login: React.FC = () => {
                   autoComplete="email"
                   required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(event) => setEmail(event.target.value)}
                   className="focus:ring-[#002147] focus:border-[#002147] block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2 border"
-                  placeholder="admin@uns.edu"
+                  placeholder="you@example.com"
                 />
               </div>
             </div>
@@ -98,28 +102,21 @@ const Login: React.FC = () => {
                   autoComplete="current-password"
                   required
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(event) => setPassword(event.target.value)}
                   className="focus:ring-[#002147] focus:border-[#002147] block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2 border"
-                  placeholder="password123"
+                  placeholder="Your password"
                 />
               </div>
             </div>
 
-            <div>
-              <button
-                type="submit"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#002147] hover:bg-[#001833] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#002147]"
-              >
-                Sign in
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#002147] hover:bg-[#001833] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#002147] disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isLoading ? 'Signing in…' : 'Sign in'}
+            </button>
           </form>
-          
-          <div className="mt-6 text-center text-xs text-gray-500">
-            <p>Demo Credentials:</p>
-            <p>Admin: admin@uns.edu / password123</p>
-            <p>Student: student@uns.edu / password123</p>
-          </div>
         </div>
       </div>
     </div>
