@@ -6,18 +6,23 @@ import {
   Building2,
   CalendarDays,
   ChevronRight,
+  DollarSign,
   FileCheck2,
+  FileText,
   GraduationCap,
   LayoutDashboard,
   LogOut,
   Menu,
+  Settings,
   ShieldCheck,
   ScrollText,
   User,
   Users,
   X,
+  BarChart3,
 } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
+import Avatar from './Avatar';
 
 export type PortalRole = 'admin' | 'student';
 
@@ -31,6 +36,9 @@ const adminNavigation: NavItem[] = [
   { label: 'Courses', path: '/admin/courses', icon: BookOpen, allowedRoles: ['super_admin', 'admin', 'registrar'] },
   { label: 'Academic terms', path: '/admin/terms', icon: CalendarDays, allowedRoles: ['super_admin', 'admin', 'registrar'] },
   { label: 'News & content', path: '/admin/content', icon: Bell, allowedRoles: ['super_admin', 'admin'] },
+  { label: 'Finance', path: '/admin/finance', icon: DollarSign, allowedRoles: ['super_admin', 'admin', 'finance'] },
+  { label: 'Reports & exports', path: '/admin/reports', icon: BarChart3, allowedRoles: ['super_admin', 'admin', 'registrar', 'finance'] },
+  { label: 'Branding settings', path: '/admin/settings', icon: Settings, allowedRoles: ['super_admin', 'admin'] },
   { label: 'Audit trail', path: '/admin/audit', icon: ScrollText, allowedRoles: ['super_admin', 'admin'] },
   { label: 'User access', path: '/admin/users', icon: ShieldCheck, allowedRoles: ['super_admin', 'admin'] },
 ];
@@ -39,6 +47,8 @@ const studentNavigation: NavItem[] = [
   { label: 'Overview', path: '/student', icon: LayoutDashboard },
   { label: 'My profile', path: '/student/profile', icon: User },
   { label: 'Academic records', path: '/student/academics', icon: GraduationCap },
+  { label: 'Fees & payments', path: '/student/finance', icon: DollarSign },
+  { label: 'My documents', path: '/student/documents', icon: FileText },
   { label: 'Announcements', path: '/student/announcements', icon: Bell },
 ];
 
@@ -87,7 +97,7 @@ const PortalShell: React.FC<{ role: PortalRole }> = ({ role }) => {
 
       <div className="border-t border-white/10 p-4">
         <div className="mb-3 flex items-center gap-3 rounded-xl bg-white/5 px-3 py-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-300 font-semibold text-slate-950">{user?.name?.charAt(0).toUpperCase() || 'U'}</div>
+          <Avatar name={user?.name} path={user?.avatar_url} size="sm" />
           <div className="min-w-0">
             <p className="truncate text-sm font-medium">{user?.name || 'UNS user'}</p>
             <p className="truncate text-xs text-slate-400">{user?.email}</p>

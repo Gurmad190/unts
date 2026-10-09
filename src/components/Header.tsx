@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, Phone } from 'lucide-react';
+import { getBranding, type BrandingSettings } from '../lib/portalApi';
 
 const Header: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [branding, setBranding] = useState<BrandingSettings | null>(null);
   const location = useLocation();
+  useEffect(() => { void getBranding().then(setBranding).catch(() => undefined); }, []);
 
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -47,8 +50,8 @@ const Header: React.FC = () => {
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-3 flex-shrink-0">
               <img 
-                src="/uns-logo.jpg" 
-                alt="University of Northeastern Somalia Logo" 
+                src={branding?.logo_url || "/uns-logo.jpg"}
+                alt={`${branding?.university_name || 'University of Northeastern Somalia'} Logo`}
                 className="w-10 h-10 md:w-12 md:h-12 rounded-full object-cover border-2 border-uns-gold"
               />
               <div className="hidden sm:block">

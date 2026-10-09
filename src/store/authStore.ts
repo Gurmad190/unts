@@ -8,6 +8,7 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  avatar_url?: string | null;
   role: Role;
   systemRole?: string;
   department?: string;
@@ -58,7 +59,7 @@ const getUserFromSession = async (authUser: SupabaseUser): Promise<User | null> 
   const [{ data: profile, error: profileError }, { data: roleRecords, error: roleError }] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, full_name, email, phone')
+      .select('id, full_name, email, phone, avatar_url')
       .eq('id', authUser.id)
       .maybeSingle(),
     supabase
@@ -97,6 +98,7 @@ const getUserFromSession = async (authUser: SupabaseUser): Promise<User | null> 
     id: authUser.id,
     name: profile?.full_name || metadata.full_name || authUser.email || 'UNS User',
     email: profile?.email || authUser.email || '',
+    avatar_url: profile?.avatar_url || null,
     role,
     systemRole: selectedSystemRole,
     department: metadata.department,

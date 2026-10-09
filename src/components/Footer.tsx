@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Phone, MapPin, Facebook, Twitter, Instagram } from 'lucide-react';
+import { getBranding, type BrandingSettings } from '../lib/portalApi';
 
 const Footer: React.FC = () => {
+  const [branding, setBranding] = useState<BrandingSettings | null>(null);
+  useEffect(() => { void getBranding().then(setBranding).catch(() => undefined); }, []);
   return (
     <footer className="bg-uns-navy text-white pt-12 pb-24 md:pb-6 border-t-4 border-uns-gold">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -11,8 +14,8 @@ const Footer: React.FC = () => {
           <div>
             <Link to="/" className="flex items-center space-x-3 mb-6">
               <img 
-                src="/uns-logo.jpg" 
-                alt="UNS Logo" 
+                src={branding?.logo_url || "/uns-logo.jpg"}
+                alt={`${branding?.university_name || 'UNS'} Logo`}
                 className="w-12 h-12 rounded-full object-cover border-2 border-uns-gold"
               />
               <div>

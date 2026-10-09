@@ -31,12 +31,18 @@ import AdminUsers from './pages/admin/Users';
 import AdminCourses from './pages/admin/Courses';
 import AdminTerms from './pages/admin/Terms';
 import AdminAudit from './pages/admin/Audit';
+import AdminStudentDetail from './pages/admin/StudentDetail';
+import AdminFinance from './pages/admin/Finance';
+import AdminReports from './pages/admin/Reports';
+import AdminSettings from './pages/admin/Settings';
 
 // Student
 import StudentDashboard from './pages/student/Dashboard';
 import StudentProfile from './pages/student/Profile';
 import StudentAcademics from './pages/student/Academics';
 import StudentAnnouncements from './pages/student/Announcements';
+import StudentFinance from './pages/student/Finance';
+import StudentDocuments from './pages/student/Documents';
 
 const LoadingScreen: React.FC = () => (
   <div className="flex min-h-screen items-center justify-center bg-slate-50">
@@ -63,9 +69,11 @@ const SystemRoleRoute: React.FC<{ allowedRoles: string[] }> = ({ allowedRoles })
     ? '/admin/admissions'
     : user?.systemRole === 'registrar'
       ? '/admin/departments'
-      : ['faculty', 'finance'].includes(user?.systemRole || '')
+      : user?.systemRole === 'faculty'
         ? '/admin/students'
-        : '/admin';
+        : user?.systemRole === 'finance'
+          ? '/admin/finance'
+          : '/admin';
   if (!user?.systemRole || !allowedRoles.includes(user.systemRole)) return <Navigate to={defaultPath} replace />;
   return <Outlet />;
 };
@@ -104,6 +112,7 @@ const App: React.FC = () => {
           </Route>
           <Route element={<SystemRoleRoute allowedRoles={['super_admin', 'admin', 'registrar', 'faculty', 'finance']} />}>
             <Route path="/admin/students" element={<AdminStudents />} />
+            <Route path="/admin/students/:id" element={<AdminStudentDetail />} />
           </Route>
           <Route element={<SystemRoleRoute allowedRoles={['super_admin', 'admin', 'registrar']} />}>
             <Route path="/admin/departments" element={<AdminDepartments />} />
@@ -118,9 +127,16 @@ const App: React.FC = () => {
             <Route path="/admin/courses" element={<AdminCourses />} />
             <Route path="/admin/terms" element={<AdminTerms />} />
           </Route>
-          <Route element={<SystemRoleRoute allowedRoles={['super_admin', 'admin']} />}>
-            <Route path="/admin/audit" element={<AdminAudit />} />
+          <Route element={<SystemRoleRoute allowedRoles={['super_admin', 'admin', 'finance']} />}>
+            <Route path="/admin/finance" element={<AdminFinance />} />
           </Route>
+          <Route element={<SystemRoleRoute allowedRoles={['super_admin', 'admin', 'registrar', 'finance']} />}>
+            <Route path="/admin/reports" element={<AdminReports />} />
+          </Route>
+          <Route element={<SystemRoleRoute allowedRoles={['super_admin', 'admin']} />}>
+            <Route path="/admin/settings" element={<AdminSettings />} />
+          </Route>
+
           </Route>
         </Route>
 
@@ -130,6 +146,8 @@ const App: React.FC = () => {
             <Route path="/student/profile" element={<StudentProfile />} />
             <Route path="/student/academics" element={<StudentAcademics />} />
             <Route path="/student/announcements" element={<StudentAnnouncements />} />
+            <Route path="/student/finance" element={<StudentFinance />} />
+            <Route path="/student/documents" element={<StudentDocuments />} />
           </Route>
         </Route>
 

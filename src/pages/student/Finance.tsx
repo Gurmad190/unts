@@ -1,0 +1,14 @@
+import React, { useEffect } from 'react';
+import { CreditCard } from 'lucide-react';
+import { EmptyState, PageHeader, StatusBadge, cardClass } from '../../components/portal/ui';
+import { useAuthStore } from '../../store/authStore';
+import { usePortalStore } from '../../store/portalStore';
+
+const StudentFinance: React.FC = () => {
+  const { user } = useAuthStore();
+  const { studentPortal, isLoading, error, loadStudentData } = usePortalStore();
+  useEffect(() => { if (user?.id) void loadStudentData(user.id); }, [user?.id, loadStudentData]);
+  const invoices = studentPortal?.invoices || [];
+  return <div className="space-y-8"><PageHeader eyebrow="Student services" title="Fees & payments" description="Review invoices, balances, scholarships and recorded payments on your student account." action={<CreditCard className="h-6 w-6 text-teal-600" />} />{error && <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{error}</div>}{isLoading ? <div className="h-72 animate-pulse rounded-2xl bg-slate-200" /> : invoices.length === 0 ? <EmptyState title="No financial records" description="No invoices or payments have been published to your student account." /> : <><section className={`${cardClass} overflow-hidden`}><div className="overflow-x-auto"><table className="min-w-full divide-y divide-slate-100 text-left"><thead className="bg-slate-50"><tr>{['Invoice', 'Term', 'Due date', 'Amount', 'Paid', 'Balance', 'Status'].map((heading) => <th key={heading} className="px-5 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">{heading}</th>)}</tr></thead><tbody className="divide-y divide-slate-100">{invoices.map((invoice) => <tr key={invoice.id}><td className="px-5 py-4 text-sm font-semibold">{invoice.invoice_number}<p className="mt-1 text-xs font-normal text-slate-500">{invoice.description || '—'}</p></td><td className="px-5 py-4 text-sm text-slate-600">{invoice.term_name || '—'}</td><td className="px-5 py-4 text-sm text-slate-600">{invoice.due_date || '—'}</td><td className="px-5 py-4 text-sm">{invoice.amount.toFixed(2)}</td><td className="px-5 py-4 text-sm text-emerald-700">{(invoice.paid_amount || 0).toFixed(2)}</td><td className="px-5 py-4 text-sm font-semibold">{(invoice.balance || 0).toFixed(2)}</td><td className="px-5 py-4"><StatusBadge status={invoice.status} /></td></tr>)}</tbody></table></div></section><section className={`${cardClass} p-6`}><h2 className="font-semibold">Recorded payments</h2>{studentPortal?.payments.length ? <div className="mt-4 space-y-2">{studentPortal.payments.map((payment) => <div key={payment.id} className="flex justify-between rounded-xl bg-emerald-50 p-3 text-sm"><span>{payment.payment_method} · {payment.reference || 'No reference'}</span><span className="font-semibold">{payment.amount.toFixed(2)}</span></div>)}</div> : <p className="mt-3 text-sm text-slate-500">No payments recorded.</p>}</section></>}</div>;
+};
+export default StudentFinance;

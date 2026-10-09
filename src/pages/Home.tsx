@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { BookOpen, Users, Globe, Award, ArrowRight, Calendar, Phone, Mail } from 'lucide-react';
-import { listAnnouncements, type Announcement } from '../lib/portalApi';
+import { listAnnouncements, getBranding, type Announcement, type BrandingSettings } from '../lib/portalApi';
 
 const Home: React.FC = () => {
   const featuredPrograms = [
@@ -32,7 +32,12 @@ const Home: React.FC = () => {
   ];
 
   const [latestNews, setLatestNews] = useState<Announcement[]>([]);
+  const [branding, setBranding] = useState<BrandingSettings | null>(null);
   const [newsLoading, setNewsLoading] = useState(true);
+
+  useEffect(() => {
+    void getBranding().then(setBranding).catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     listAnnouncements()
@@ -58,9 +63,9 @@ const Home: React.FC = () => {
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-white py-16">
           <div className="max-w-3xl">
             <div className="flex items-center space-x-4 mb-6">
-              <img src="/uns-logo.jpg" alt="UNS Logo" className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover border-2 border-uns-gold" />
+              <img src={branding?.logo_url || "/uns-logo.jpg"} alt={`${branding?.university_name || 'UNS'} Logo`} className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover border-2 border-uns-gold" />
               <div>
-                <p className="text-uns-gold font-bold text-sm uppercase tracking-widest">University of Northeastern Somalia</p>
+                <p className="text-uns-gold font-bold text-sm uppercase tracking-widest">{branding?.university_name || 'University of Northeastern Somalia'}</p>
                 <p className="text-blue-200 text-xs mt-1">Great Minds Build Nations</p>
               </div>
             </div>

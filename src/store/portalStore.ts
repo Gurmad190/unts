@@ -6,8 +6,11 @@ import {
   createCourse,
   createDepartment,
   createProgram,
+  createInvoice,
   createStaffUser,
+  dropStudentCourse,
   enrollStudentInTerm,
+  getStudentDetail,
   getStudentPortalData,
   listAcademicTerms,
   listActivePrograms,
@@ -17,13 +20,19 @@ import {
   listAuditLogs,
   listCourses,
   listDepartments,
+  listInvoices,
   listPortalUsers,
   listPrograms,
+  recordCourseGrade,
+  recordPayment,
+  registerStudentCourse,
   setApplicationStatus,
   setCurrentTerm,
   updateAnnouncementStatus,
+  updateAcademicTerm,
   updateCourseStatus,
   updatePortalUser,
+  updateStudentProfile,
   updateStudentStatus,
   type AcademicTerm,
   type Announcement,
@@ -31,8 +40,11 @@ import {
   type AuditLog,
   type Course,
   type Department,
+  type InvoiceRecord,
+  type PaymentRecord,
   type PortalUser,
   type Program,
+  type StudentDetail,
   type StudentPortalData,
   type StudentRecord,
 } from '../lib/portalApi';
@@ -48,6 +60,8 @@ interface PortalState {
   users: PortalUser[];
   auditLogs: AuditLog[];
   studentPortal: StudentPortalData | null;
+  studentDetail: StudentDetail | null;
+  invoices: InvoiceRecord[];
   isLoading: boolean;
   error: string | null;
   loadAdminData: () => Promise<void>;
@@ -57,6 +71,8 @@ interface PortalState {
   loadAuditLogs: () => Promise<void>;
   loadStudents: () => Promise<void>;
   loadStudentData: (userId: string) => Promise<void>;
+  loadStudentDetail: (studentId: string) => Promise<void>;
+  loadInvoices: () => Promise<void>;
   loadUsers: () => Promise<void>;
   loadApplications: () => Promise<void>;
   loadAnnouncements: (includeDrafts?: boolean) => Promise<void>;
@@ -64,7 +80,8 @@ interface PortalState {
   addProgram: (input: Omit<Program, 'id'>) => Promise<void>;
   addCourse: (input: Omit<Course, 'id' | 'department_name' | 'program_name'>) => Promise<void>;
   toggleCourse: (id: string, active: boolean) => Promise<void>;
-  addTerm: (input: Pick<AcademicTerm, 'name' | 'code' | 'starts_on' | 'ends_on' | 'is_current'>) => Promise<void>;
+  addTerm: (input: Pick<AcademicTerm, 'name' | 'code' | 'starts_on' | 'ends_on' | 'is_current'> & Partial<Pick<AcademicTerm, 'academic_year' | 'term_type' | 'registration_opens' | 'registration_closes'>>) => Promise<void>;
+  updateTerm: (input: Pick<AcademicTerm, 'id' | 'name' | 'code' | 'starts_on' | 'ends_on'> & Partial<Pick<AcademicTerm, 'academic_year' | 'term_type' | 'registration_opens' | 'registration_closes'>>) => Promise<void>;
   activateTerm: (id: string) => Promise<void>;
   addAnnouncement: (input: Pick<Announcement, 'title' | 'summary' | 'body' | 'content_type' | 'status'>) => Promise<void>;
   publishAnnouncement: (id: string, status: string) => Promise<void>;
@@ -72,6 +89,12 @@ interface PortalState {
   setApplicationWorkflowStatus: (id: string, status: 'new' | 'review' | 'withdrawn', notes?: string) => Promise<void>;
   updateStudentRecordStatus: (id: string, status: 'active' | 'graduated' | 'suspended' | 'withdrawn' | 'inactive') => Promise<void>;
   enrollStudent: (studentId: string, termId: string) => Promise<void>;
+  updateStudentProfile: (input: Parameters<typeof updateStudentProfile>[0]) => Promise<void>;
+  registerCourse: (studentId: string, termId: string, courseId: string) => Promise<void>;
+  dropCourse: (registrationId: string) => Promise<void>;
+  recordGrade: (registrationId: string, grade: string, gradePoints: number, remarks: string) => Promise<void>;
+  createInvoice: (input: Parameters<typeof createInvoice>[0]) => Promise<void>;
+  recordPayment: (input: Parameters<typeof recordPayment>[0]) => Promise<void>;
   addStaffUser: (input: { email: string; fullName: string; password: string; role: string; phone: string }) => Promise<void>;
   updateUser: (input: { userId: string; fullName: string; phone: string; role: string }) => Promise<void>;
   clearError: () => void;
@@ -90,6 +113,8 @@ export const usePortalStore = create<PortalState>((set, get) => ({
   users: [],
   auditLogs: [],
   studentPortal: null,
+  studentDetail: null,
+  invoices: [],
   isLoading: false,
   error: null,
 
@@ -160,6 +185,24 @@ export const usePortalStore = create<PortalState>((set, get) => ({
     try {
       const studentPortal = await getStudentPortalData(userId);
       set({ studentPortal, isLoading: false });
+    } catch (error) {
+      set({ isLoading: false, error: errorMessage(error) });
+    }
+  },
+
+  loadStudentDetail: async (studentId) => {
+    set({ isLoading: true, error: null });
+    try {
+      set({ studentDetail: await getStudentDetail(studentId), isLoading: false });
+    } catch (error) {
+      set({ isLoading: false, error: errorMessage(error) });
+    }
+  },
+
+  loadInvoices: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      set({ invoices: await listInvoices(), isLoading: false });
     } catch (error) {
       set({ isLoading: false, error: errorMessage(error) });
     }
@@ -244,6 +287,16 @@ export const usePortalStore = create<PortalState>((set, get) => ({
     }
   },
 
+  updateTerm: async (input) => {
+    try {
+      const term = await updateAcademicTerm(input);
+      set((state) => ({ terms: state.terms.map((item) => item.id === term.id ? { ...item, ...term } : item) }));
+    } catch (error) {
+      set({ error: errorMessage(error) });
+      throw error;
+    }
+  },
+
   activateTerm: async (id) => {
     try {
       const activeTerm = await setCurrentTerm(id);
@@ -308,6 +361,72 @@ export const usePortalStore = create<PortalState>((set, get) => ({
   enrollStudent: async (studentId, termId) => {
     try {
       await enrollStudentInTerm(studentId, termId);
+      await get().loadStudents();
+    } catch (error) {
+      set({ error: errorMessage(error) });
+      throw error;
+    }
+  },
+
+  updateStudentProfile: async (input) => {
+    try {
+      await updateStudentProfile(input);
+      await get().loadStudentDetail(input.studentId);
+      await get().loadStudents();
+    } catch (error) {
+      set({ error: errorMessage(error) });
+      throw error;
+    }
+  },
+
+  registerCourse: async (studentId, termId, courseId) => {
+    try {
+      await registerStudentCourse(studentId, termId, courseId);
+      await get().loadStudentDetail(studentId);
+      const profileId = get().studentPortal?.student?.profile_id;
+      if (profileId) await get().loadStudentData(profileId);
+    } catch (error) {
+      set({ error: errorMessage(error) });
+      throw error;
+    }
+  },
+
+  dropCourse: async (registrationId) => {
+    try {
+      await dropStudentCourse(registrationId);
+      const studentId = get().studentDetail?.student.id;
+      if (studentId) await get().loadStudentDetail(studentId);
+    } catch (error) {
+      set({ error: errorMessage(error) });
+      throw error;
+    }
+  },
+
+  recordGrade: async (registrationId, grade, gradePoints, remarks) => {
+    try {
+      await recordCourseGrade(registrationId, grade, gradePoints, remarks);
+      const studentId = get().studentDetail?.student.id;
+      if (studentId) await get().loadStudentDetail(studentId);
+    } catch (error) {
+      set({ error: errorMessage(error) });
+      throw error;
+    }
+  },
+
+  createInvoice: async (input) => {
+    try {
+      await createInvoice(input);
+      await get().loadInvoices();
+    } catch (error) {
+      set({ error: errorMessage(error) });
+      throw error;
+    }
+  },
+
+  recordPayment: async (input) => {
+    try {
+      await recordPayment(input);
+      await get().loadInvoices();
     } catch (error) {
       set({ error: errorMessage(error) });
       throw error;
