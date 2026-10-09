@@ -125,7 +125,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
 
       if (!authSubscription) {
-        const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data } = supabase.auth.onAuthStateChange((event, session) => {
+          if (event === 'INITIAL_SESSION') {
+            return;
+          }
+
           const requestId = invalidateAuthRequests();
 
           if (!session?.user) {
