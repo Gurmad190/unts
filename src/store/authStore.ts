@@ -13,6 +13,7 @@ export interface User {
   department?: string;
   program?: string;
   status?: string;
+  mustResetPassword?: boolean;
 }
 
 interface AuthState {
@@ -23,6 +24,8 @@ interface AuthState {
   error: string | null;
   initialize: () => Promise<void>;
   login: (email: string, password: string) => Promise<boolean>;
+  requestPasswordReset: (email: string) => Promise<boolean>;
+  updatePassword: (password: string) => Promise<boolean>;
   logout: () => Promise<void>;
   clearError: () => void;
 }
@@ -99,6 +102,7 @@ const getUserFromSession = async (authUser: SupabaseUser): Promise<User | null> 
     department: metadata.department,
     program: metadata.program,
     status: metadata.status,
+    mustResetPassword: metadata.must_reset_password === true,
   };
 };
 
@@ -254,6 +258,47 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       setUnauthenticated(set, getFriendlyError(profileError, 'We could not load your portal profile.'));
       return false;
     }
+  },
+
+  requestPasswordReset: async (email) => {
+    if (!isSupabaseConfigured || !supabase) {
+      set({ error: 'Authentication is not configured. Add the Supabase environment variables and redeploy.' });
+      return false;
+    }
+
+    set({ isLoading: true, error: null });
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
+      redirectTo: `${window.location.origin}/login?recovery=1`,
+    });
+
+    if (error) {
+      set({ isLoading: false, error: getFriendlyError(error, 'We could not send a password reset email.') });
+      return false;
+    }
+
+    set({ isLoading: false, error: null });
+    return true;
+  },
+
+  updatePassword: async (password) => {
+    if (!isSupabaseConfigured || !supabase) {
+      set({ error: 'Authentication is not configured. Add the Supabase environment variables and redeploy.' });
+      return false;
+    }
+
+    set({ isLoading: true, error: null });
+    const { error } = await supabase.auth.updateUser({
+      password,
+      data: { must_reset_password: false },
+    });
+
+    if (error) {
+      set({ isLoading: false, error: getFriendlyError(error, 'We could not update your password.') });
+      return false;
+    }
+
+    set({ isLoading: false, error: null });
+    return true;
   },
 
   logout: async () => {
