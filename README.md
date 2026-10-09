@@ -41,15 +41,27 @@ The UNS public website and admin/student portal is a React 18 + TypeScript appli
    pnpm dev
    ```
 
+## Portal architecture
+
+- `PortalShell` provides the responsive authenticated navigation for administrators and students.
+- Portal domain data is loaded through `src/lib/portalApi.ts` and Supabase RLS; the old in-memory admin store is no longer used.
+- Zustand is limited to auth and portal loading/UI state.
+- The public `/apply` form calls the protected `submit_application` database function. It only exposes active programmes and the current academic term.
+- Admissions staff use `/admin/admissions`. Approving an application calls the `approve-student-application` Edge Function, which creates the student account server-side, runs the atomic approval function, and returns a temporary password only in the approval response.
+- Super Admins use `/admin/users` to create staff accounts through the protected `admin-create-user` Edge Function.
+
+The database migrations and Edge Functions must be applied to the Supabase project before using these workflows. Keep `SUPABASE_SERVICE_ROLE_KEY` and all other secret keys in Supabase Edge Function secrets only; they must never be added to Vercel client environment variables or browser code.
+
 ## Portal access
 
 The login screen uses Supabase email/password authentication. After authentication, the application reads the signed-in user's profile from `public.profiles` and their role from `public.user_roles`.
 
 - `student` users are sent to the student portal.
-- `admin`, `super_admin`, `registrar`, `admissions`, and `finance` users are sent to the admin portal.
+- `admin`, `super_admin`, `registrar`, `admissions`, `faculty`, and `finance` users are sent to the admin portal.
+- Navigation is filtered by the user's system role, while Supabase RLS and Edge Function authorization remain the security boundary.
 - Authenticated users without a supported role are signed out and shown an explanatory error.
 
-Create and manage users in Supabase Auth, then add their matching profile and role records. Do not add demo credentials to source code.
+For production, use the Super Admin user-management workflow or a controlled Supabase admin process to provision accounts. Do not add demo credentials or service keys to source code. Student accounts are created from accepted applications; they are not created from the staff form.
 
 ## Verification commands
 
@@ -70,4 +82,4 @@ Vercel is connected to the `main` branch of `Gurmad190/unts`. The repository's `
 - Output: `dist`
 - SPA fallback: all routes rewrite to `index.html`
 
-Configure `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in the Vercel Production, Preview, and Development environments before deploying.
+Configure `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` in the Vercel Production, Preview, and Development environments before deploying. The Edge Functions use Supabase-managed `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `SUPABASE_SERVICE_ROLE_KEY` secrets; these are not frontend environment variables.
