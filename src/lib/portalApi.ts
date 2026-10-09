@@ -60,6 +60,40 @@ export interface Announcement {
   created_at: string;
 }
 
+export interface AcademicTerm {
+  id: string;
+  name: string;
+  code: string;
+  starts_on: string;
+  ends_on: string;
+  is_current: boolean;
+}
+
+export interface Course {
+  id: string;
+  department_id: string;
+  program_id: string | null;
+  code: string;
+  title: string;
+  credits: number;
+  level: number | null;
+  active: boolean;
+  department_name: string;
+  program_name: string | null;
+}
+
+export interface AuditLog {
+  id: string;
+  actor_id: string | null;
+  actor_name: string;
+  actor_email: string;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+}
+
 export interface PortalUser {
   id: string;
   full_name: string;
@@ -113,6 +147,64 @@ export const listPrograms = async (): Promise<Program[]> => {
 export const listActivePrograms = async (): Promise<Program[]> => {
   const programs = await listPrograms();
   return programs.filter((program) => program.active);
+};
+
+export const listAcademicTerms = async (): Promise<AcademicTerm[]> => {
+  const client = requireClient();
+  const { data, error } = await client.from('academic_terms').select('id, name, code, starts_on, ends_on, is_current').order('starts_on', { ascending: false });
+  return unwrap(data as AcademicTerm[] | null, error);
+};
+
+export const createAcademicTerm = async (input: Pick<AcademicTerm, 'name' | 'code' | 'starts_on' | 'ends_on' | 'is_current'>) => {
+  const client = requireClient();
+  const { data, error } = await client.from('academic_terms').insert({ ...input, code: input.code.trim().toUpperCase(), is_current: false }).select('id, name, code, starts_on, ends_on, is_current').single();
+  return unwrap(data as AcademicTerm | null, error);
+};
+
+export const setCurrentTerm = async (termId: string) => {
+  const client = requireClient();
+  const { data, error } = await client.rpc('set_current_term', { p_term_id: termId });
+  return unwrap((Array.isArray(data) ? data[0] : data) as AcademicTerm | null, error);
+};
+
+export const listCourses = async (): Promise<Course[]> => {
+  const client = requireClient();
+  const { data: rows, error } = await client.from('courses').select('id, department_id, program_id, code, title, credits, level, active').order('code');
+  if (error) throw error;
+  const courses = rows ?? [];
+  const departmentIds = courses.map((course) => course.department_id).filter((id): id is string => typeof id === 'string');
+  const programIds = courses.map((course) => course.program_id).filter((id): id is string => typeof id === 'string');
+  const [departmentsResult, programsResult] = await Promise.all([
+    departmentIds.length ? client.from('departments').select('id, name').in('id', departmentIds) : Promise.resolve({ data: [], error: null }),
+    programIds.length ? client.from('programs').select('id, name').in('id', programIds) : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (departmentsResult.error) throw departmentsResult.error;
+  if (programsResult.error) throw programsResult.error;
+  const departments = new Map((departmentsResult.data ?? []).map((department) => [department.id, department.name]));
+  const programs = new Map((programsResult.data ?? []).map((program) => [program.id, program.name]));
+  return courses.map((course) => ({
+    ...course,
+    credits: Number(course.credits),
+    level: course.level === null ? null : Number(course.level),
+    department_name: departments.get(course.department_id) || 'Department not assigned',
+    program_name: course.program_id ? programs.get(course.program_id) || null : null,
+  })) as Course[];
+};
+
+export const createCourse = async (input: Omit<Course, 'id' | 'department_name' | 'program_name'>) => {
+  const client = requireClient();
+  const { data, error } = await client.from('courses').insert(input).select('id, department_id, program_id, code, title, credits, level, active').single();
+  if (error) throw error;
+  const courses = await listCourses();
+  return courses.find((course) => course.id === data.id) as Course;
+};
+
+export const updateCourseStatus = async (id: string, active: boolean) => {
+  const client = requireClient();
+  const { data, error } = await client.from('courses').update({ active, updated_at: new Date().toISOString() }).eq('id', id).select('id, department_id, program_id, code, title, credits, level, active').single();
+  if (error) throw error;
+  const courses = await listCourses();
+  return courses.find((course) => course.id === data.id) as Course;
 };
 
 export const getCurrentTerm = async () => {
@@ -314,6 +406,48 @@ export const approveApplication = async (applicationId: string, decision: 'accep
     body: { applicationId, decision, notes: notes || null },
   });
   return unwrap(data as { result: { application_id: string; application_status: string; student_id: string | null; student_number: string | null }; accountCreated: boolean; temporaryPassword: string | null } | null, error);
+};
+
+export const setApplicationStatus = async (applicationId: string, status: 'new' | 'review' | 'withdrawn', notes?: string) => {
+  const client = requireClient();
+  const { data, error } = await client.rpc('set_application_status', { p_application_id: applicationId, p_status: status, p_notes: notes || null });
+  return unwrap((Array.isArray(data) ? data[0] : data) as { application_id: string; application_status: string; reviewed_at: string | null; notes: string | null } | null, error);
+};
+
+export const updateStudentStatus = async (studentId: string, status: 'active' | 'graduated' | 'suspended' | 'withdrawn' | 'inactive') => {
+  const client = requireClient();
+  const { data, error } = await client.rpc('update_student_status', { p_student_id: studentId, p_status: status });
+  return unwrap((Array.isArray(data) ? data[0] : data) as { student_id: string; student_status: string } | null, error);
+};
+
+export const enrollStudentInTerm = async (studentId: string, termId: string) => {
+  const client = requireClient();
+  const { data, error } = await client.rpc('enroll_student_in_term', { p_student_id: studentId, p_term_id: termId });
+  return unwrap((Array.isArray(data) ? data[0] : data) as { enrollment_id: string; student_id: string; program_id: string; term_id: string; enrollment_status: string } | null, error);
+};
+
+export const listAuditLogs = async (): Promise<AuditLog[]> => {
+  const client = requireClient();
+  const { data: rows, error } = await client.from('audit_logs').select('id, actor_id, action, entity_type, entity_id, metadata, created_at').order('created_at', { ascending: false }).limit(100);
+  if (error) throw error;
+  const actorIds = (rows ?? []).map((row) => row.actor_id).filter((id): id is string => typeof id === 'string');
+  const { data: profiles, error: profilesError } = actorIds.length ? await client.from('profiles').select('id, full_name, email').in('id', actorIds) : { data: [], error: null };
+  if (profilesError) throw profilesError;
+  const profileMap = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
+  return (rows ?? []).map((row) => {
+    const actor = typeof row.actor_id === 'string' ? profileMap.get(row.actor_id) : undefined;
+    return {
+      id: String(row.id),
+      actor_id: typeof row.actor_id === 'string' ? row.actor_id : null,
+      actor_name: actor?.full_name || 'System / public submission',
+      actor_email: actor?.email || '',
+      action: String(row.action),
+      entity_type: String(row.entity_type),
+      entity_id: typeof row.entity_id === 'string' ? row.entity_id : null,
+      metadata: (row.metadata || {}) as Record<string, unknown>,
+      created_at: String(row.created_at),
+    };
+  });
 };
 
 export const updatePortalUser = async (input: { userId: string; fullName: string; phone: string; role: string }) => {

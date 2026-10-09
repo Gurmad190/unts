@@ -36,5 +36,8 @@ The repository now mirrors the hosted migration ledger. The first fifteen histor
 - `phase1_security_and_onboarding` — prevents anonymous applicant PII overwrites, assigns the `student` role during acceptance, prevents orphan student rows, protects profile email identity fields, narrows profile administration, and removes unnecessary browser privileges.
 - `phase1_application_insert_boundary` — removes direct browser inserts into `applications`; public submissions use the `submit_application` RPC.
 - `phase1_privileged_rpc_boundary` — requires an authenticated caller for `admin_update_user` while retaining server-side role checks.
+- `phase2_workflow_and_operations` — adds server-enforced review-state transitions, term activation, student status/enrollment RPCs, a single-current-term constraint, and audit triggers for sensitive portal changes.
+- `phase2_workflow_privilege_boundary` — removes direct browser writes to RPC-managed student and enrollment records and keeps the audit trigger function private.
+- `phase2_audit_append_only` — makes audit logs append-only to browser roles; records are written by the database trigger boundary.
 
 Apply schema changes through Supabase migrations, review RLS policies after each change, and deploy the matching function source with JWT verification enabled. Never use the service-role key from a client component. Do not run `supabase db reset`, blind `supabase db push`, or replay the historical files against the hosted project.

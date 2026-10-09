@@ -47,7 +47,9 @@ The UNS public website and admin/student portal is a React 18 + TypeScript appli
 - Portal domain data is loaded through `src/lib/portalApi.ts` and Supabase RLS; the old in-memory admin store is no longer used.
 - Zustand is limited to auth and portal loading/UI state.
 - The public `/apply` form calls the protected `submit_application` database function. It only exposes active programmes and the current academic term.
-- Admissions staff use `/admin/admissions`. Approving an application calls the `approve-student-application` Edge Function, which creates the student account server-side, runs the atomic approval function, and returns a temporary password only in the approval response.
+- Admissions staff use `/admin/admissions`. Approving an application calls the `approve-student-application` Edge Function, which creates the student account server-side, runs the atomic approval function, and returns a temporary password only in the approval response. Review-state changes use the protected `set_application_status` RPC.
+- Registrars use `/admin/departments`, `/admin/courses`, `/admin/terms`, and `/admin/students` for catalogue, term and enrollment operations. Sensitive student and enrollment writes use protected database RPCs.
+- Super Admins and Admins can review `/admin/audit`, which reads the append-only audit trail populated by database triggers.
 - Super Admins use `/admin/users` to create staff accounts through the protected `admin-create-user` Edge Function.
 
 The database migrations and Edge Functions must be applied to the Supabase project before using these workflows. Keep `SUPABASE_SERVICE_ROLE_KEY` and all other secret keys in Supabase Edge Function secrets only; they must never be added to Vercel client environment variables or browser code.

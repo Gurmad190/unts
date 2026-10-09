@@ -28,6 +28,9 @@ import AdminStudents from './pages/admin/Students';
 import AdminAdmissions from './pages/admin/Admissions';
 import AdminContent from './pages/admin/Content';
 import AdminUsers from './pages/admin/Users';
+import AdminCourses from './pages/admin/Courses';
+import AdminTerms from './pages/admin/Terms';
+import AdminAudit from './pages/admin/Audit';
 
 // Student
 import StudentDashboard from './pages/student/Dashboard';
@@ -110,6 +113,13 @@ const App: React.FC = () => {
           </Route>
           <Route element={<SystemRoleRoute allowedRoles={['super_admin', 'admin']} />}>
             <Route path="/admin/users" element={<AdminUsers />} />
+          </Route>
+          <Route element={<SystemRoleRoute allowedRoles={['super_admin', 'admin', 'registrar']} />}>
+            <Route path="/admin/courses" element={<AdminCourses />} />
+            <Route path="/admin/terms" element={<AdminTerms />} />
+          </Route>
+          <Route element={<SystemRoleRoute allowedRoles={['super_admin', 'admin']} />}>
+            <Route path="/admin/audit" element={<AdminAudit />} />
           </Route>
           </Route>
         </Route>

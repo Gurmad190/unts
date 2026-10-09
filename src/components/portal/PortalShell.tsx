@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   Bell,
+  BookOpen,
   Building2,
+  CalendarDays,
   ChevronRight,
   FileCheck2,
   GraduationCap,
@@ -10,6 +12,7 @@ import {
   LogOut,
   Menu,
   ShieldCheck,
+  ScrollText,
   User,
   Users,
   X,
@@ -25,7 +28,10 @@ const adminNavigation: NavItem[] = [
   { label: 'Applications', path: '/admin/admissions', icon: FileCheck2, allowedRoles: ['super_admin', 'admin', 'admissions'] },
   { label: 'Students', path: '/admin/students', icon: Users, allowedRoles: ['super_admin', 'admin', 'registrar', 'faculty', 'finance'] },
   { label: 'Departments & programmes', path: '/admin/departments', icon: Building2, allowedRoles: ['super_admin', 'admin', 'registrar'] },
+  { label: 'Courses', path: '/admin/courses', icon: BookOpen, allowedRoles: ['super_admin', 'admin', 'registrar'] },
+  { label: 'Academic terms', path: '/admin/terms', icon: CalendarDays, allowedRoles: ['super_admin', 'admin', 'registrar'] },
   { label: 'News & content', path: '/admin/content', icon: Bell, allowedRoles: ['super_admin', 'admin'] },
+  { label: 'Audit trail', path: '/admin/audit', icon: ScrollText, allowedRoles: ['super_admin', 'admin'] },
   { label: 'User access', path: '/admin/users', icon: ShieldCheck, allowedRoles: ['super_admin', 'admin'] },
 ];
 
