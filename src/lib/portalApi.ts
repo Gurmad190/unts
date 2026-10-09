@@ -120,7 +120,7 @@ export const getCurrentTerm = async () => {
   const { data, error } = await client
     .from('academic_terms')
     .select('id, name, code, starts_on, ends_on, is_current')
-    .order('is_current', { ascending: false })
+    .eq('is_current', true)
     .order('starts_on', { ascending: false })
     .limit(1)
     .maybeSingle();
