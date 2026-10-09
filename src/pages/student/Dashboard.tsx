@@ -1,95 +1,22 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowUpRight, Bell, BookOpen, CalendarDays, FileText, GraduationCap } from 'lucide-react';
+import { EmptyState, PageHeader, StatCard, StatusBadge, cardClass } from '../../components/portal/ui';
 import { useAuthStore } from '../../store/authStore';
-import { useAdminStore } from '../../store/adminStore';
-import { BookOpen, Calendar, FileText, Bell } from 'lucide-react';
+import { usePortalStore } from '../../store/portalStore';
 
 const StudentDashboard: React.FC = () => {
   const { user } = useAuthStore();
-  const { programs, departments } = useAdminStore();
+  const { studentPortal, isLoading, error, loadStudentData } = usePortalStore();
+  useEffect(() => { if (user?.id) void loadStudentData(user.id); }, [loadStudentData, user?.id]);
+  const student = studentPortal?.student;
+  const latestTranscript = studentPortal?.transcripts[0];
 
-  const program = programs.find(p => p.name === user?.program);
-  const department = departments.find(d => d.name === user?.department);
-
-  return (
-    <div className="space-y-6">
-      {/* Welcome Banner */}
-      <div className="bg-[#002147] rounded-lg shadow-lg p-6 text-white">
-        <h2 className="text-2xl font-bold mb-2">Welcome back, {user?.name}!</h2>
-        <p className="text-gray-300">Here's what's happening with your studies today.</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Academic Info Card */}
-        <div className="bg-white rounded-lg shadow p-6 md:col-span-2">
-          <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-            <BookOpen className="w-5 h-5 mr-2 text-[#C41E3A]" />
-            Current Program
-          </h3>
-          <div className="bg-gray-50 rounded-md p-4 border border-gray-200">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">Program</p>
-                <p className="font-medium text-gray-900">{user?.program || 'Not Assigned'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Department</p>
-                <p className="font-medium text-gray-900">{user?.department || 'Not Assigned'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Status</p>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 mt-1">
-                  {user?.status || 'Active'}
-                </span>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Level</p>
-                <p className="font-medium text-gray-900">{program?.level || 'Undergraduate'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Links */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Links</h3>
-          <div className="space-y-3">
-            <button className="w-full flex items-center justify-between p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors">
-              <div className="flex items-center">
-                <FileText className="w-5 h-5 text-gray-400 mr-3" />
-                <span className="text-sm font-medium text-gray-700">My Documents</span>
-              </div>
-            </button>
-            <button className="w-full flex items-center justify-between p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors">
-              <div className="flex items-center">
-                <Calendar className="w-5 h-5 text-gray-400 mr-3" />
-                <span className="text-sm font-medium text-gray-700">Class Schedule</span>
-              </div>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Announcements */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-          <Bell className="w-5 h-5 mr-2 text-[#FFD700]" />
-          Recent Announcements
-        </h3>
-        <div className="space-y-4">
-          <div className="border-l-4 border-[#002147] pl-4 py-2">
-            <p className="text-sm text-gray-500 mb-1">Oct 15, 2024</p>
-            <h4 className="text-md font-medium text-gray-900">Fall Semester Registration Opens</h4>
-            <p className="text-sm text-gray-600 mt-1">Registration for the upcoming Fall semester will begin next week. Please check your academic advisor for course approvals.</p>
-          </div>
-          <div className="border-l-4 border-[#C41E3A] pl-4 py-2">
-            <p className="text-sm text-gray-500 mb-1">Oct 10, 2024</p>
-            <h4 className="text-md font-medium text-gray-900">Campus Library Extended Hours</h4>
-            <p className="text-sm text-gray-600 mt-1">The main library will now be open 24/7 during the mid-term examination period.</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  return <div className="space-y-8"><PageHeader eyebrow="Student services" title={`Welcome back, ${user?.name?.split(' ')[0] || 'student'}.`} description="Your academic journey, important updates and next actions in one calm workspace." action={<Link to="/student/profile" className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">View profile <ArrowUpRight className="h-4 w-4" /></Link>} />
+    {error && <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{error}</div>}
+    {!isLoading && !student ? <EmptyState title="Your student record is not ready yet" description="A student profile appears after an admissions application is approved. If you have already been approved, contact the Registrar." action={<Link to="/" className="font-semibold text-slate-900">Return to the public website</Link>} /> : <><div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"><StatCard label="Student number" value={student?.student_number || '—'} detail={student?.status || 'Awaiting record'} icon={<GraduationCap className="h-5 w-5" />} /><StatCard label="Programme" value={student?.program_name || '—'} detail={student?.department_name || 'Department not assigned'} icon={<BookOpen className="h-5 w-5" />} tone="teal" /><StatCard label="Cumulative GPA" value={latestTranscript?.cumulative_gpa?.toFixed(2) || '—'} detail={latestTranscript ? `${latestTranscript.credits_earned} credits earned` : 'No transcript published'} icon={<FileText className="h-5 w-5" />} tone="amber" /><StatCard label="Status" value={student?.status || '—'} detail={student?.enrollment_date ? `Since ${new Date(student.enrollment_date).toLocaleDateString()}` : 'Enrollment date pending'} icon={<CalendarDays className="h-5 w-5" />} tone="rose" /></div>
+      <div className="grid gap-6 xl:grid-cols-[1.3fr_1fr]"><section className={`${cardClass} p-6`}><div className="flex items-center justify-between"><div><h2 className="font-semibold text-slate-950">Your academic snapshot</h2><p className="mt-1 text-sm text-slate-500">The latest information available from the Registrar.</p></div><StatusBadge status={student?.status || 'pending'} /></div><dl className="mt-6 grid gap-5 sm:grid-cols-2"><div><dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">Programme</dt><dd className="mt-1 text-sm font-medium text-slate-900">{student?.program_name || 'Not assigned'}</dd></div><div><dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">Department</dt><dd className="mt-1 text-sm font-medium text-slate-900">{student?.department_name || 'Not assigned'}</dd></div><div><dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">Credits earned</dt><dd className="mt-1 text-sm font-medium text-slate-900">{latestTranscript?.credits_earned ?? '—'}</dd></div><div><dt className="text-xs font-semibold uppercase tracking-wide text-slate-400">Latest term GPA</dt><dd className="mt-1 text-sm font-medium text-slate-900">{latestTranscript?.term_gpa?.toFixed(2) || '—'}</dd></div></dl></section><section className={`${cardClass} p-6`}><div className="flex items-center gap-2"><Bell className="h-5 w-5 text-teal-600" /><h2 className="font-semibold text-slate-950">Next actions</h2></div><div className="mt-5 space-y-3"><Link to="/student/profile" className="block rounded-xl border border-slate-200 p-4 hover:border-slate-950"><p className="text-sm font-semibold">Keep your profile current</p><p className="mt-1 text-xs leading-5 text-slate-500">Review your contact information before registration.</p></Link><Link to="/student/academics" className="block rounded-xl border border-slate-200 p-4 hover:border-slate-950"><p className="text-sm font-semibold">View academic records</p><p className="mt-1 text-xs leading-5 text-slate-500">Check your latest transcript and results.</p></Link></div></section></div>
+      <section className={`${cardClass} p-6`}><div className="flex items-center justify-between"><div><h2 className="font-semibold text-slate-950">Latest announcements</h2><p className="mt-1 text-sm text-slate-500">Updates published for the university community.</p></div><Link to="/student/announcements" className="text-sm font-semibold text-slate-700">View all</Link></div><div className="mt-5 grid gap-3 md:grid-cols-2">{(studentPortal?.announcements ?? []).slice(0, 4).map((announcement) => <article key={announcement.id} className="rounded-xl border border-slate-200 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-slate-400">{announcement.content_type}</p><h3 className="mt-2 text-sm font-semibold text-slate-900">{announcement.title}</h3><p className="mt-2 text-sm leading-6 text-slate-600">{announcement.summary || announcement.body}</p></article>)}{!isLoading && !(studentPortal?.announcements.length) && <div className="md:col-span-2"><EmptyState title="No announcements" description="New university updates will appear here." /></div>}</div></section></>}</div>;
 };
 
 export default StudentDashboard;
