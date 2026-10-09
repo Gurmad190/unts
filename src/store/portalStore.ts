@@ -14,6 +14,7 @@ import {
   listPortalUsers,
   listPrograms,
   updateAnnouncementStatus,
+  updatePortalUser,
   type Announcement,
   type ApplicationRecord,
   type Department,
@@ -46,6 +47,7 @@ interface PortalState {
   publishAnnouncement: (id: string, status: string) => Promise<void>;
   decideApplication: (id: string, decision: 'accepted' | 'rejected' | 'waitlisted', notes?: string) => Promise<{ temporaryPassword: string | null }>;
   addStaffUser: (input: { email: string; fullName: string; password: string; role: string; phone: string }) => Promise<void>;
+  updateUser: (input: { userId: string; fullName: string; phone: string; role: string }) => Promise<void>;
   clearError: () => void;
 }
 
@@ -188,6 +190,16 @@ export const usePortalStore = create<PortalState>((set, get) => ({
   addStaffUser: async (input) => {
     try {
       await createStaffUser(input);
+      await get().loadUsers();
+    } catch (error) {
+      set({ error: errorMessage(error) });
+      throw error;
+    }
+  },
+
+  updateUser: async (input) => {
+    try {
+      await updatePortalUser(input);
       await get().loadUsers();
     } catch (error) {
       set({ error: errorMessage(error) });

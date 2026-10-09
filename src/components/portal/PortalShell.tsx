@@ -26,7 +26,7 @@ const adminNavigation: NavItem[] = [
   { label: 'Students', path: '/admin/students', icon: Users, allowedRoles: ['super_admin', 'admin', 'registrar', 'faculty', 'finance'] },
   { label: 'Departments & programmes', path: '/admin/departments', icon: Building2, allowedRoles: ['super_admin', 'admin', 'registrar'] },
   { label: 'News & content', path: '/admin/content', icon: Bell, allowedRoles: ['super_admin', 'admin'] },
-  { label: 'User access', path: '/admin/users', icon: ShieldCheck, allowedRoles: ['super_admin'] },
+  { label: 'User access', path: '/admin/users', icon: ShieldCheck, allowedRoles: ['super_admin', 'admin'] },
 ];
 
 const studentNavigation: NavItem[] = [

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowUpRight, Bell, Building2, FileCheck2, GraduationCap, Users } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, Bell, Building2, CheckCircle2, Clock3, FileCheck2, FilePenLine, GraduationCap, Users } from 'lucide-react';
 import { EmptyState, PageHeader, StatCard, StatusBadge, cardClass } from '../../components/portal/ui';
 import { usePortalStore } from '../../store/portalStore';
 
@@ -10,7 +10,10 @@ const AdminDashboard: React.FC = () => {
   useEffect(() => { void loadAdminData(); }, [loadAdminData]);
 
   const pending = applications.filter((application) => ['applied', 'new', 'review'].includes(application.status)).length;
+  const accepted = applications.filter((application) => application.status === 'accepted').length;
+  const rejected = applications.filter((application) => application.status === 'rejected').length;
   const activeStudents = students.filter((student) => student.status === 'active').length;
+  const draftUpdates = announcements.filter((item) => item.status === 'draft').length;
 
   return (
     <div className="space-y-8">
@@ -29,6 +32,27 @@ const AdminDashboard: React.FC = () => {
         <StatCard label="Programmes" value={programs.length} detail={`${departments.length} departments`} icon={<GraduationCap className="h-5 w-5" />} />
         <StatCard label="Published updates" value={announcements.filter((item) => item.status === 'published').length} detail="Visible to the university community" icon={<Bell className="h-5 w-5" />} tone="rose" />
       </div>
+
+      <section className={`${cardClass} p-6`}>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Operational pulse</p><h2 className="mt-1 font-semibold text-slate-950">Keep today’s work moving</h2></div>
+          <p className="text-sm text-slate-500">Live from the portal workspace</p>
+        </div>
+        <div className="mt-5 grid gap-3 md:grid-cols-3">
+          <Link to="/admin/admissions" className="group rounded-xl border border-amber-200 bg-amber-50/60 p-4 transition hover:-translate-y-0.5 hover:bg-amber-50">
+            <div className="flex items-center justify-between"><Clock3 className="h-5 w-5 text-amber-700" /><ArrowRight className="h-4 w-4 text-amber-700 transition group-hover:translate-x-0.5" /></div>
+            <p className="mt-4 text-2xl font-semibold text-slate-950">{pending}</p><p className="mt-1 text-sm font-semibold text-slate-800">Waiting for review</p><p className="mt-1 text-xs text-slate-600">{accepted} accepted · {rejected} rejected</p>
+          </Link>
+          <Link to="/admin/content" className="group rounded-xl border border-rose-200 bg-rose-50/60 p-4 transition hover:-translate-y-0.5 hover:bg-rose-50">
+            <div className="flex items-center justify-between"><FilePenLine className="h-5 w-5 text-rose-700" /><ArrowRight className="h-4 w-4 text-rose-700 transition group-hover:translate-x-0.5" /></div>
+            <p className="mt-4 text-2xl font-semibold text-slate-950">{draftUpdates}</p><p className="mt-1 text-sm font-semibold text-slate-800">Draft updates</p><p className="mt-1 text-xs text-slate-600">Prepare news and announcements for publishing</p>
+          </Link>
+          <Link to="/admin/students" className="group rounded-xl border border-teal-200 bg-teal-50/60 p-4 transition hover:-translate-y-0.5 hover:bg-teal-50">
+            <div className="flex items-center justify-between"><CheckCircle2 className="h-5 w-5 text-teal-700" /><ArrowRight className="h-4 w-4 text-teal-700 transition group-hover:translate-x-0.5" /></div>
+            <p className="mt-4 text-2xl font-semibold text-slate-950">{activeStudents}</p><p className="mt-1 text-sm font-semibold text-slate-800">Active students</p><p className="mt-1 text-xs text-slate-600">Open the student directory and academic links</p>
+          </Link>
+        </div>
+      </section>
 
       <div className="grid gap-6 xl:grid-cols-[1.35fr_1fr]">
         <section className={`${cardClass} overflow-hidden`}>

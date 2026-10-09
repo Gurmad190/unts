@@ -108,7 +108,7 @@ const App: React.FC = () => {
           <Route element={<SystemRoleRoute allowedRoles={['super_admin', 'admin']} />}>
             <Route path="/admin/content" element={<AdminContent />} />
           </Route>
-          <Route element={<SystemRoleRoute allowedRoles={['super_admin']} />}>
+          <Route element={<SystemRoleRoute allowedRoles={['super_admin', 'admin']} />}>
             <Route path="/admin/users" element={<AdminUsers />} />
           </Route>
           </Route>

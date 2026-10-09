@@ -316,6 +316,12 @@ export const approveApplication = async (applicationId: string, decision: 'accep
   return unwrap(data as { result: { application_id: string; application_status: string; student_id: string | null; student_number: string | null }; accountCreated: boolean; temporaryPassword: string | null } | null, error);
 };
 
+export const updatePortalUser = async (input: { userId: string; fullName: string; phone: string; role: string }) => {
+  const client = requireClient();
+  const { data, error } = await client.functions.invoke('admin-update-user', { body: input });
+  return unwrap(data as { user: { id: string; full_name: string; email: string; phone: string | null; role: string } } | null, error);
+};
+
 export const createStaffUser = async (input: { email: string; fullName: string; password: string; role: string; phone: string }) => {
   const client = requireClient();
   const { data, error } = await client.functions.invoke('admin-create-user', { body: input });
