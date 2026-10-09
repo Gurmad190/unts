@@ -9,6 +9,7 @@ export interface User {
   name: string;
   email: string;
   role: Role;
+  systemRole?: string;
   department?: string;
   program?: string;
   status?: string;
@@ -26,7 +27,7 @@ interface AuthState {
   clearError: () => void;
 }
 
-const ADMIN_ROLES = new Set(['super_admin', 'admin', 'registrar', 'admissions', 'finance']);
+const ADMIN_ROLES = new Set(['super_admin', 'admin', 'registrar', 'admissions', 'faculty', 'finance']);
 
 let authSubscription: { unsubscribe: () => void } | null = null;
 let initializationPromise: Promise<void> | null = null;
@@ -74,6 +75,9 @@ const getUserFromSession = async (authUser: SupabaseUser): Promise<User | null> 
   const databaseRoles = (roleRecords ?? [])
     .map((record) => (typeof record.role === 'string' ? record.role : null))
     .filter((role): role is string => role !== null);
+  const selectedSystemRole = databaseRoles.includes('super_admin')
+    ? 'super_admin'
+    : databaseRoles.find((databaseRole) => ADMIN_ROLES.has(databaseRole)) ?? databaseRoles[0];
   const role: Role = databaseRoles.some((databaseRole) => ADMIN_ROLES.has(databaseRole))
     ? 'admin'
     : databaseRoles.includes('student')
@@ -91,6 +95,7 @@ const getUserFromSession = async (authUser: SupabaseUser): Promise<User | null> 
     name: profile?.full_name || metadata.full_name || authUser.email || 'UNS User',
     email: profile?.email || authUser.email || '',
     role,
+    systemRole: selectedSystemRole,
     department: metadata.department,
     program: metadata.program,
     status: metadata.status,
