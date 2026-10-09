@@ -26,5 +26,6 @@ The hosted project has these workflow migrations applied:
 7. `grant_anon_published_announcements_select` — grants the anonymous API role the minimum table permission needed for that policy.
 8. `fix_approve_application_conflict` — fixes the approval RPC conflict with its `application_id` return column.
 9. `qualify_approve_application_student_number` — qualifies the accepted-student lookup to avoid a `student_number` return-column conflict.
+10. `qualify_approve_application_profile_id` — qualifies the joined profile lookup to avoid an `id` collision.
 
 Apply schema changes through Supabase migrations, review RLS policies after each change, and deploy the matching function source with JWT verification enabled. Never use the service-role key from a client component.
