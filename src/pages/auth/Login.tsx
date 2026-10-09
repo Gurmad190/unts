@@ -16,12 +16,13 @@ const Login: React.FC = () => {
   const location = useLocation();
   const { login, user, isLoading, error, clearError } = useAuthStore();
 
-  const from = (location.state as LoginLocationState | null)?.from?.pathname;
-  const destination = from && from !== '/login'
-    ? from
-    : user?.role === 'admin'
-      ? '/admin'
-      : '/student';
+  const requestedDestination = (location.state as LoginLocationState | null)?.from?.pathname;
+  const roleHome = user?.role === 'admin' ? '/admin' : '/student';
+  const destination = user && requestedDestination && requestedDestination !== '/login'
+    && ((user.role === 'admin' && requestedDestination.startsWith('/admin'))
+      || (user.role === 'student' && requestedDestination.startsWith('/student')))
+    ? requestedDestination
+    : roleHome;
 
   useEffect(() => {
     if (user) {
@@ -33,12 +34,7 @@ const Login: React.FC = () => {
     event.preventDefault();
     clearError();
 
-    const success = await login(email, password);
-
-    if (success) {
-      const loggedInUser = useAuthStore.getState().user;
-      navigate(loggedInUser?.role === 'admin' ? '/admin' : '/student', { replace: true });
-    }
+    await login(email, password);
   };
 
   return (

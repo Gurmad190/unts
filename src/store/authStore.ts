@@ -17,6 +17,7 @@ export interface User {
 interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
+  isInitializing: boolean;
   isLoading: boolean;
   error: string | null;
   initialize: () => Promise<void>;
@@ -29,6 +30,8 @@ const ADMIN_ROLES = new Set(['super_admin', 'admin', 'registrar', 'admissions', 
 
 let authSubscription: { unsubscribe: () => void } | null = null;
 let initializationPromise: Promise<void> | null = null;
+let hasInitialized = false;
+let authRequestSequence = 0;
 
 const getFriendlyError = (error: unknown, fallback: string) => {
   if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
@@ -38,12 +41,17 @@ const getFriendlyError = (error: unknown, fallback: string) => {
   return fallback;
 };
 
+const invalidateAuthRequests = () => {
+  authRequestSequence += 1;
+  return authRequestSequence;
+};
+
 const getUserFromSession = async (authUser: SupabaseUser): Promise<User | null> => {
   if (!supabase) {
     return null;
   }
 
-  const [{ data: profile, error: profileError }, { data: roleRecord, error: roleError }] = await Promise.all([
+  const [{ data: profile, error: profileError }, { data: roleRecords, error: roleError }] = await Promise.all([
     supabase
       .from('profiles')
       .select('id, full_name, email, phone')
@@ -52,10 +60,7 @@ const getUserFromSession = async (authUser: SupabaseUser): Promise<User | null> 
     supabase
       .from('user_roles')
       .select('role')
-      .eq('user_id', authUser.id)
-      .order('created_at', { ascending: true })
-      .limit(1)
-      .maybeSingle(),
+      .eq('user_id', authUser.id),
   ]);
 
   if (profileError) {
@@ -66,11 +71,13 @@ const getUserFromSession = async (authUser: SupabaseUser): Promise<User | null> 
     throw roleError;
   }
 
-  const databaseRole = typeof roleRecord?.role === 'string' ? roleRecord.role : null;
-  const role: Role = databaseRole === 'student'
-    ? 'student'
-    : databaseRole && ADMIN_ROLES.has(databaseRole)
-      ? 'admin'
+  const databaseRoles = (roleRecords ?? [])
+    .map((record) => (typeof record.role === 'string' ? record.role : null))
+    .filter((role): role is string => role !== null);
+  const role: Role = databaseRoles.some((databaseRole) => ADMIN_ROLES.has(databaseRole))
+    ? 'admin'
+    : databaseRoles.includes('student')
+      ? 'student'
       : null;
 
   if (!role) {
@@ -91,17 +98,23 @@ const getUserFromSession = async (authUser: SupabaseUser): Promise<User | null> 
 };
 
 const setUnauthenticated = (set: (state: Partial<AuthState>) => void, error: string | null = null) => {
+  invalidateAuthRequests();
   set({ user: null, isAuthenticated: false, isLoading: false, error });
 };
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isAuthenticated: false,
-  isLoading: true,
+  isInitializing: true,
+  isLoading: false,
   error: null,
 
   initialize: async () => {
-    if (get().isLoading && initializationPromise) {
+    if (hasInitialized) {
+      return;
+    }
+
+    if (initializationPromise) {
       return initializationPromise;
     }
 
@@ -113,6 +126,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (!authSubscription) {
         const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+          const requestId = invalidateAuthRequests();
+
           if (!session?.user) {
             setUnauthenticated(set);
             return;
@@ -120,6 +135,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
           void getUserFromSession(session.user)
             .then((user) => {
+              if (requestId !== authRequestSequence) {
+                return;
+              }
+
               if (!user) {
                 setUnauthenticated(set, 'Your account does not have an assigned UNS portal role.');
                 return;
@@ -128,14 +147,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
               set({ user, isAuthenticated: true, isLoading: false, error: null });
             })
             .catch((error: unknown) => {
-              setUnauthenticated(set, getFriendlyError(error, 'We could not load your portal profile.'));
+              if (requestId === authRequestSequence) {
+                setUnauthenticated(set, getFriendlyError(error, 'We could not load your portal profile.'));
+              }
             });
         });
 
         authSubscription = data.subscription;
       }
 
+      const requestId = invalidateAuthRequests();
       const { data: sessionData, error } = await supabase.auth.getSession();
+
+      if (requestId !== authRequestSequence) {
+        return;
+      }
 
       if (error) {
         setUnauthenticated(set, getFriendlyError(error, 'We could not restore your session.'));
@@ -150,6 +176,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       try {
         const user = await getUserFromSession(sessionData.session.user);
 
+        if (requestId !== authRequestSequence) {
+          return;
+        }
+
         if (!user) {
           await supabase.auth.signOut();
           setUnauthenticated(set, 'Your account does not have an assigned UNS portal role.');
@@ -158,9 +188,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
         set({ user, isAuthenticated: true, isLoading: false, error: null });
       } catch (error: unknown) {
-        setUnauthenticated(set, getFriendlyError(error, 'We could not load your portal profile.'));
+        if (requestId === authRequestSequence) {
+          setUnauthenticated(set, getFriendlyError(error, 'We could not load your portal profile.'));
+        }
       }
     })().finally(() => {
+      hasInitialized = true;
+      set({ isInitializing: false });
       initializationPromise = null;
     });
 
@@ -185,8 +219,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return false;
     }
 
+    const requestId = invalidateAuthRequests();
+
     try {
       const user = await getUserFromSession(data.user);
+
+      if (requestId !== authRequestSequence) {
+        return false;
+      }
 
       if (!user) {
         await supabase.auth.signOut();
@@ -197,6 +237,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ user, isAuthenticated: true, isLoading: false, error: null });
       return true;
     } catch (profileError: unknown) {
+      if (requestId !== authRequestSequence) {
+        return false;
+      }
+
       await supabase.auth.signOut();
       setUnauthenticated(set, getFriendlyError(profileError, 'We could not load your portal profile.'));
       return false;
@@ -204,11 +248,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: async () => {
-    if (supabase) {
-      await supabase.auth.signOut();
-    }
-
+    invalidateAuthRequests();
     set({ user: null, isAuthenticated: false, isLoading: false, error: null });
+
+    try {
+      if (supabase) {
+        await supabase.auth.signOut();
+      }
+    } catch {
+      // The local session is already cleared; a later refresh will reconcile with Supabase.
+    }
   },
 
   clearError: () => set({ error: null }),

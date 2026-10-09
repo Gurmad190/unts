@@ -44,18 +44,18 @@ const LoadingScreen: React.FC = () => (
 );
 
 const ProtectedRoute = ({ children, allowedRole }: { children: React.ReactNode, allowedRole: 'admin' | 'student' }) => {
-  const { isAuthenticated, isLoading, user } = useAuthStore();
+  const { isAuthenticated, isInitializing, user } = useAuthStore();
   const location = useLocation();
 
-  if (isLoading) {
+  if (isInitializing) {
     return <LoadingScreen />;
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (user?.role !== allowedRole) {
+  if (user.role !== allowedRole) {
     return <Navigate to={user?.role === 'admin' ? '/admin' : '/student'} replace />;
   }
 
@@ -64,13 +64,13 @@ const ProtectedRoute = ({ children, allowedRole }: { children: React.ReactNode, 
 
 const App: React.FC = () => {
   const initialize = useAuthStore((state) => state.initialize);
-  const isLoading = useAuthStore((state) => state.isLoading);
+  const isInitializing = useAuthStore((state) => state.isInitializing);
 
   useEffect(() => {
     void initialize();
   }, [initialize]);
 
-  if (isLoading) {
+  if (isInitializing) {
     return <LoadingScreen />;
   }
 
