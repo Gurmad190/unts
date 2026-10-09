@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import AdminLayout from './layouts/AdminLayout';
@@ -32,9 +32,24 @@ import AdminContent from './pages/admin/Content';
 import StudentDashboard from './pages/student/Dashboard';
 import StudentProfile from './pages/student/Profile';
 
+const LoadingScreen: React.FC = () => (
+  <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+    <div className="text-center">
+      <div className="w-16 h-16 mx-auto bg-[#002147] rounded-full flex items-center justify-center text-[#FFD700] font-bold text-2xl">
+        UNS
+      </div>
+      <p className="mt-4 text-sm text-gray-600">Loading your portal…</p>
+    </div>
+  </div>
+);
+
 const ProtectedRoute = ({ children, allowedRole }: { children: React.ReactNode, allowedRole: 'admin' | 'student' }) => {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, isLoading, user } = useAuthStore();
   const location = useLocation();
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
@@ -48,6 +63,17 @@ const ProtectedRoute = ({ children, allowedRole }: { children: React.ReactNode, 
 };
 
 const App: React.FC = () => {
+  const initialize = useAuthStore((state) => state.initialize);
+  const isLoading = useAuthStore((state) => state.isLoading);
+
+  useEffect(() => {
+    void initialize();
+  }, [initialize]);
+
+  if (isLoading) {
+    return <LoadingScreen />;
+  }
+
   return (
     <Router>
       <Routes>
@@ -63,7 +89,7 @@ const App: React.FC = () => {
         <Route path="/career" element={<Layout><CareerDevelopment /></Layout>} />
         <Route path="/news" element={<Layout><NewsEvents /></Layout>} />
         <Route path="/contact" element={<Layout><Contact /></Layout>} />
-        
+
         {/* Auth Route */}
         <Route path="/login" element={<Login />} />
 
