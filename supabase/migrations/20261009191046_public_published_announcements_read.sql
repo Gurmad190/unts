@@ -1,0 +1,1 @@
+create policy announcements_public_read on public.announcements for select to anon using (status = 'published');
